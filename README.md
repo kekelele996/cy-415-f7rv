@@ -18,7 +18,16 @@ ReSwap 是一个纯前端以物换物 Web 应用。用户可以本地模拟登�
 - 发布物品，支持本地 base64 图片上传、分类和成色选择。
 - 交换管理，区分我发起的和我收到的请求，支持同意、拒绝、完成。
 - 个人中心，编辑资料、上传头像、查看我发布的物品。
+- 用户黑名单：个人中心拉黑/解除，被拉黑者无法对你的可交换物品发起交换，双方待确认请求立即关闭。
 - 主题切换、全局错误处理和 Vant 提示。
+
+## 黑名单（用户关系）
+
+- 入口在「我的 → 黑名单」，可对任意其他用户拉黑或解除拉黑。
+- 拉黑是方向性的：被拉黑的人不能再对拉黑者发布的可交换物品发起请求（`exchangeApi.create` 统一拦截，物品详情页同步隐藏表单项）。
+- 拉黑生效时，两人之间所有待确认请求立即置为「已关闭」（`ExchangeStatus.CANCELLED`），双方物品状态不变；已同意、已完成、已拒绝的记录照常保留。
+- 关系按用户对（`pair_key`）存储：双方互拉只留一条记录，重复操作或两个标签页同时提交也只生效一次。
+- 解除拉黑只移除关系记录，历史交换记录（含已关闭的旧请求）保持不变，旧请求不会恢复。
 
 ## 启动与构建
 
@@ -49,16 +58,16 @@ pnpm build
 
 ```text
 src/
-├── api/              # userApi.ts, itemApi.ts, exchangeApi.ts：本地数据 API 层
-├── stores/           # authStore.ts, itemStore.ts, exchangeStore.ts, themeStore.ts
-├── models/           # user.ts, item.ts, exchange.ts：独立数据模型
+├── api/              # userApi.ts, itemApi.ts, exchangeApi.ts, blockApi.ts：本地数据 API 层
+├── stores/           # authStore.ts, itemStore.ts, exchangeStore.ts, blockStore.ts, themeStore.ts
+├── models/           # user.ts, item.ts, exchange.ts, block.ts：独立数据模型
 ├── types/            # 共享类型补充
 ├── components/common/# 共享业务组件和 GlobalErrorBoundary
 ├── hooks/            # useAuth.ts, useLocalStorage.ts, useExchangeStats.ts
 ├── pages/            # Home, ItemDetail, Publish, Exchanges, Profile
 ├── router/           # index.ts + guards.ts
 ├── utils/            # storage.ts, formatters.ts, validators.ts, message.ts, themeUtils.ts
-├── constants/        # item.ts, exchange.ts, themes.ts, messages.ts
+├── constants/        # item.ts, exchange.ts, block.ts, themes.ts, messages.ts
 ├── App.vue
 ├── main.ts
 └── styles.css

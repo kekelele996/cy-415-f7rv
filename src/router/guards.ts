@@ -4,6 +4,7 @@ import { ExchangeStatus } from '@/constants/exchange';
 import { ItemStatus } from '@/constants/item';
 import { LOG_MESSAGES } from '@/constants/messages';
 import { useAuthStore } from '@/stores/authStore';
+import { useBlockStore } from '@/stores/blockStore';
 import { useExchangeStore } from '@/stores/exchangeStore';
 import { useItemStore } from '@/stores/itemStore';
 
@@ -12,6 +13,7 @@ export const setupRouterGuards = (router: Router) => {
     const authStore = useAuthStore();
     const itemStore = useItemStore();
     const exchangeStore = useExchangeStore();
+    const blockStore = useBlockStore();
     if (!authStore.currentUser) {
       await authStore.hydrate();
     }
@@ -20,6 +22,9 @@ export const setupRouterGuards = (router: Router) => {
     }
     if (!exchangeStore.exchanges.length) {
       await exchangeStore.hydrate();
+    }
+    if (!blockStore.hydrated) {
+      await blockStore.hydrate();
     }
 
     const statusProbe = itemStore.items.some((item) => item.status === ItemStatus.AVAILABLE);

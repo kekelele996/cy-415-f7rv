@@ -1,7 +1,9 @@
 import { EXCHANGE_ACTION_FLOW, ExchangeStatus } from '@/constants/exchange';
 import { ItemStatus } from '@/constants/item';
+import { FORM_MESSAGES } from '@/constants/messages';
 import type { Exchange, ExchangeDraft } from '@/models/exchange';
 
+import { blockApi } from './blockApi';
 import { itemApi } from './itemApi';
 import { storage, STORAGE_KEYS } from '@/utils/storage';
 
@@ -33,6 +35,9 @@ export const exchangeApi = {
     if (!targetItem || targetItem.status !== ItemStatus.AVAILABLE) {
       throw new Error('目标物品当前不可交换');
     }
+    if (await blockApi.isBlockedBy(draft.to_user_id, draft.from_user_id)) {
+      throw new Error(FORM_MESSAGES.exchangeBlocked);
+    }
     const nextExchange: Exchange = {
       ...draft,
       id: storage.createId('exchange'),
@@ -61,5 +66,29 @@ export const exchangeApi = {
       exchanges.map((item) => (item.id === id ? nextExchange : item)),
     );
     return nextExchange;
+  },
+
+  /**
+   * 拉黑时调用：把两人之间（两个方向）所有待确认请求置为已关闭。
+   * 只动 Exchange.status，不触碰双方物品状态；已同意/已完成/已拒绝的记录原样保留。
+   */
+  async closePendingBetween(userA: string, userB: string): Promise<number> {
+    const exchanges = await this.list();
+    const now = new Date().toISOString();
+    let closed = 0;
+    const next = exchanges.map((item) => {
+      const betweenPair =
+        (item.from_user_id === userA && item.to_user_id === userB) ||
+        (item.from_user_id === userB && item.to_user_id === userA);
+      if (betweenPair && item.status === ExchangeStatus.PENDING) {
+        closed += 1;
+        return { ...item, status: ExchangeStatus.CANCELLED, updated_at: now };
+      }
+      return item;
+    });
+    if (closed > 0) {
+      await storage.set(STORAGE_KEYS.exchanges, next);
+    }
+    return closed;
   },
 };

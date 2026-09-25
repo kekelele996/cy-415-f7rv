@@ -21,6 +21,7 @@ export const formatExchangeStatus = (status: ExchangeStatus) => {
     [ExchangeStatus.ACCEPTED]: '已同意',
     [ExchangeStatus.REJECTED]: '已拒绝',
     [ExchangeStatus.COMPLETED]: '已完成',
+    [ExchangeStatus.CANCELLED]: '已关闭',
   };
   return map[status];
 };
@@ -44,7 +45,9 @@ export const formatCreditLevel = (score: number) => {
 
 export const statusToneClass = (status: ItemStatus | ExchangeStatus) => {
   if (status === ItemStatus.AVAILABLE || status === ExchangeStatus.ACCEPTED) return 'status-good';
-  if (status === ItemStatus.OFFLINE || status === ExchangeStatus.REJECTED) return 'status-muted';
+  if (status === ItemStatus.OFFLINE || status === ExchangeStatus.REJECTED || status === ExchangeStatus.CANCELLED) {
+    return 'status-muted';
+  }
   if (status === ItemStatus.EXCHANGED || status === ExchangeStatus.COMPLETED) return 'status-done';
   return 'status-wait';
 };

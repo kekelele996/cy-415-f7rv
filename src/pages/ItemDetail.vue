@@ -29,22 +29,25 @@
         <UserBrief v-if="owner" :user="owner" />
 
         <div v-if="!isMine" class="exchange-box">
-          <label>
-            我的交换物
-            <select v-model="selectedItemId">
-              <option value="">选择一件我发布的可交换物品</option>
-              <option v-for="myItem in ownAvailableItems" :key="myItem.id" :value="myItem.id">
-                {{ myItem.title }}
-              </option>
-            </select>
-          </label>
-          <label>
-            留言
-            <textarea v-model="messageText" rows="3" />
-          </label>
-          <button class="primary-button" type="button" :disabled="item.status !== ItemStatus.AVAILABLE" @click="requestExchange">
-            发起交换
-          </button>
+          <p v-if="blockedByOwner" class="form-note">{{ PAGE_MESSAGES.exchangeBlockedHint }}</p>
+          <template v-else>
+            <label>
+              我的交换物
+              <select v-model="selectedItemId">
+                <option value="">选择一件我发布的可交换物品</option>
+                <option v-for="myItem in ownAvailableItems" :key="myItem.id" :value="myItem.id">
+                  {{ myItem.title }}
+                </option>
+              </select>
+            </label>
+            <label>
+              留言
+              <textarea v-model="messageText" rows="3" />
+            </label>
+            <button class="primary-button" type="button" :disabled="item.status !== ItemStatus.AVAILABLE" @click="requestExchange">
+              发起交换
+            </button>
+          </template>
         </div>
         <button v-else-if="item.status === ItemStatus.AVAILABLE" class="secondary-button" type="button" @click="offlineItem">
           下架这件物品
@@ -64,7 +67,9 @@ import ItemImageGallery from '@/components/common/ItemImageGallery.vue';
 import UserBrief from '@/components/common/UserBrief.vue';
 import { ExchangeStatus } from '@/constants/exchange';
 import { ItemStatus } from '@/constants/item';
+import { PAGE_MESSAGES } from '@/constants/messages';
 import { useAuthStore } from '@/stores/authStore';
+import { useBlockStore } from '@/stores/blockStore';
 import { useExchangeStore } from '@/stores/exchangeStore';
 import { useItemStore } from '@/stores/itemStore';
 import { formatCondition, formatDate, formatItemStatus, statusToneClass } from '@/utils/formatters';
@@ -74,10 +79,14 @@ const route = useRoute();
 const itemStore = useItemStore();
 const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
+const blockStore = useBlockStore();
 
 const item = computed(() => itemStore.items.find((entry) => entry.id === route.params.id));
 const owner = computed(() => authStore.users.find((user) => user.id === item.value?.user_id));
 const isMine = computed(() => authStore.currentUser?.id === item.value?.user_id);
+const blockedByOwner = computed(() =>
+  authStore.currentUser && owner.value ? blockStore.isBlockedBy(owner.value.id, authStore.currentUser.id) : false,
+);
 const ownAvailableItems = computed(() =>
   authStore.currentUser ? itemStore.availableMyItems(authStore.currentUser.id) : [],
 );

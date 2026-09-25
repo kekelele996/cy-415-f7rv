@@ -347,6 +347,7 @@ main {
 .publish-form,
 .profile-form,
 .profile-side,
+.blacklist-panel,
 .exchange-card,
 .empty-state,
 .global-error {
@@ -597,6 +598,47 @@ textarea {
 .profile-side {
   display: grid;
   gap: 18px;
+}
+
+.blacklist-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.blacklist-panel__heading {
+  display: grid;
+  gap: 8px;
+}
+
+.blacklist-panel__heading h2 {
+  margin: 0;
+}
+
+.blacklist-list {
+  display: grid;
+  gap: 12px;
+}
+
+.blacklist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 7px;
+  background: color-mix(in oklch, var(--rs-primary), transparent 90%);
+  padding: 12px;
+}
+
+.blacklist-row__action {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .my-items {
