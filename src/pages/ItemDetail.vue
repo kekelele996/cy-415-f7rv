@@ -28,7 +28,10 @@
         </dl>
         <UserBrief v-if="owner" :user="owner" />
 
-        <div v-if="!isMine" class="exchange-box">
+        <div v-if="!isMine && blockedWithOwner" class="block-hint">
+          {{ BLACKLIST_MESSAGES.exchangeBlocked }}
+        </div>
+        <div v-else-if="!isMine" class="exchange-box">
           <label>
             我的交换物
             <select v-model="selectedItemId">
@@ -64,7 +67,9 @@ import ItemImageGallery from '@/components/common/ItemImageGallery.vue';
 import UserBrief from '@/components/common/UserBrief.vue';
 import { ExchangeStatus } from '@/constants/exchange';
 import { ItemStatus } from '@/constants/item';
+import { BLACKLIST_MESSAGES } from '@/constants/messages';
 import { useAuthStore } from '@/stores/authStore';
+import { useBlacklistStore } from '@/stores/blacklistStore';
 import { useExchangeStore } from '@/stores/exchangeStore';
 import { useItemStore } from '@/stores/itemStore';
 import { formatCondition, formatDate, formatItemStatus, statusToneClass } from '@/utils/formatters';
@@ -74,10 +79,18 @@ const route = useRoute();
 const itemStore = useItemStore();
 const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
+const blacklistStore = useBlacklistStore();
 
 const item = computed(() => itemStore.items.find((entry) => entry.id === route.params.id));
 const owner = computed(() => authStore.users.find((user) => user.id === item.value?.user_id));
 const isMine = computed(() => authStore.currentUser?.id === item.value?.user_id);
+const blockedWithOwner = computed(() =>
+  Boolean(
+    authStore.currentUser &&
+      owner.value &&
+      blacklistStore.isBlockedBetween(authStore.currentUser.id, owner.value.id),
+  ),
+);
 const ownAvailableItems = computed(() =>
   authStore.currentUser ? itemStore.availableMyItems(authStore.currentUser.id) : [],
 );
@@ -86,6 +99,10 @@ const messageText = ref('我想用这件闲置与你交换，可以沟通时间�
 
 const requestExchange = async () => {
   if (!authStore.currentUser || !item.value || !owner.value) return;
+  if (blockedWithOwner.value) {
+    message(BLACKLIST_MESSAGES.exchangeBlocked, 'error');
+    return;
+  }
   if (!itemStore.assertCanExchange(authStore.currentUser.id)) return;
   if (!selectedItemId.value) {
     message('请选择一件自己的物品', 'error');

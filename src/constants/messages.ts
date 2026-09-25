@@ -16,6 +16,16 @@ export const FORM_MESSAGES = {
   exchangeNeedOwnItem: '请先发布一件可交换物品',
 };
 
+export const BLACKLIST_MESSAGES = {
+  selfBlock: '不能拉黑自己',
+  alreadyBlocked: '对方已在黑名单中，重复操作不会再生效',
+  blocked: '已拉黑，对方无法再对你的物品发起交换',
+  closedPending: (count: number) => `已拉黑，并关闭了双方之间 ${count} 条待确认的交换请求`,
+  unblocked: '已解除拉黑，历史交换记录保持原样',
+  exchangeBlocked: '受黑名单限制，你们之间无法发起交换',
+  profileHint: '拉黑后对方无法对你发布的可交换物品发起请求，待确认的请求会立即关闭；解除后历史记录保持原样。',
+};
+
 export const LOG_MESSAGES = {
   storageHydrated: 'storage hydrated with status maps',
   itemStatusUsed: `ItemStatus includes ${ItemStatus.AVAILABLE}, ${ItemStatus.EXCHANGED}, ${ItemStatus.OFFLINE}`,

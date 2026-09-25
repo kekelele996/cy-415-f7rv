@@ -55,6 +55,39 @@
       </div>
       <EmptyState v-else title="还没有发布物品" description="发布一件闲置后会出现在这里" mark="物" />
     </section>
+
+    <section class="blacklist-panel">
+      <h2>黑名单</h2>
+      <p class="form-note">{{ BLACKLIST_MESSAGES.profileHint }}</p>
+      <div class="blacklist-add">
+        <select v-model="blockCandidateId">
+          <option value="">选择要拉黑的用户</option>
+          <option v-for="user in blockCandidates" :key="user.id" :value="user.id">
+            {{ user.nickname }} · {{ user.location }}
+          </option>
+        </select>
+        <button
+          class="secondary-button"
+          type="button"
+          :disabled="!blockCandidateId || blacklistStore.acting"
+          @click="blockUser"
+        >
+          拉黑
+        </button>
+      </div>
+      <ul v-if="blockedEntries.length" class="blacklist-list">
+        <li v-for="entry in blockedEntries" :key="entry.relation.id">
+          <div>
+            <strong>{{ entry.other?.nickname ?? '未知用户' }}</strong>
+            <small>{{ formatDate(entry.relation.created_at) }} 拉黑</small>
+          </div>
+          <button type="button" :disabled="blacklistStore.acting" @click="blacklistStore.unblock(entry.otherId)">
+            解除
+          </button>
+        </li>
+      </ul>
+      <p v-else class="form-note">黑名单为空。被拉黑的用户会出现在这里，可随时解除。</p>
+    </section>
   </section>
 </template>
 
@@ -66,12 +99,17 @@ import EmptyState from '@/components/common/EmptyState.vue';
 import ItemCard from '@/components/common/ItemCard.vue';
 import UserBrief from '@/components/common/UserBrief.vue';
 import { ItemStatus } from '@/constants/item';
+import { BLACKLIST_MESSAGES } from '@/constants/messages';
 import { useAuth } from '@/hooks/useAuth';
+import { useBlacklistStore } from '@/stores/blacklistStore';
 import { useItemStore } from '@/stores/itemStore';
+import { formatDate } from '@/utils/formatters';
 
 const { currentUser, users, login, updateProfile } = useAuth();
 const itemStore = useItemStore();
+const blacklistStore = useBlacklistStore();
 const selectedUserId = ref('');
+const blockCandidateId = ref('');
 
 const form = reactive({
   nickname: '',
@@ -101,6 +139,33 @@ watch(
 
 const myItems = computed(() => (currentUser.value ? itemStore.myItems(currentUser.value.id) : []));
 const availableCount = computed(() => myItems.value.filter((item) => item.status === ItemStatus.AVAILABLE).length);
+
+const blockedEntries = computed(() => {
+  if (!currentUser.value) return [];
+  const myId = currentUser.value.id;
+  return blacklistStore.relationsOf(myId).map((relation) => {
+    const otherId = relation.blocker_id === myId ? relation.blocked_id : relation.blocker_id;
+    return {
+      relation,
+      otherId,
+      other: users.value.find((user) => user.id === otherId),
+    };
+  });
+});
+
+const blockCandidates = computed(() => {
+  if (!currentUser.value) return [];
+  const myId = currentUser.value.id;
+  return users.value.filter(
+    (user) => user.id !== myId && !blacklistStore.isBlockedBetween(myId, user.id),
+  );
+});
+
+const blockUser = async () => {
+  if (!blockCandidateId.value) return;
+  await blacklistStore.block(blockCandidateId.value);
+  blockCandidateId.value = '';
+};
 
 const save = async () => {
   await updateProfile({ ...form });

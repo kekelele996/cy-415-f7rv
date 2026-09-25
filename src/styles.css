@@ -599,6 +599,76 @@ textarea {
   gap: 18px;
 }
 
+.blacklist-panel {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--rs-surface), transparent 1%);
+  padding: 22px;
+}
+
+.blacklist-panel h2 {
+  margin: 0;
+}
+
+.blacklist-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.blacklist-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blacklist-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 7px;
+  background: color-mix(in oklch, var(--rs-primary), transparent 90%);
+  padding: 12px;
+}
+
+.blacklist-list li > div {
+  display: grid;
+  gap: 3px;
+}
+
+.blacklist-list small {
+  color: color-mix(in oklch, var(--rs-text), transparent 42%);
+}
+
+.blacklist-list button {
+  min-height: 38px;
+  border: 1px solid var(--rs-border);
+  border-radius: 7px;
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--rs-text);
+}
+
+.block-hint {
+  border: 1px dashed var(--rs-border);
+  border-radius: 8px;
+  padding: 16px;
+  color: color-mix(in oklch, var(--rs-text), transparent 30%);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .blacklist-add {
+    grid-template-columns: 1fr;
+  }
+}
+
 .my-items {
   display: grid;
   gap: 16px;

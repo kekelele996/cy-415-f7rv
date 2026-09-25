@@ -32,6 +32,7 @@ import { ConfigProvider as VanConfigProvider } from 'vant';
 
 import GlobalErrorBoundary from '@/components/common/GlobalErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
+import { useBlacklistStore } from '@/stores/blacklistStore';
 import { useExchangeStore } from '@/stores/exchangeStore';
 import { useItemStore } from '@/stores/itemStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -40,11 +41,17 @@ import { toVantTheme } from '@/utils/themeUtils';
 const authStore = useAuthStore();
 const itemStore = useItemStore();
 const exchangeStore = useExchangeStore();
+const blacklistStore = useBlacklistStore();
 const themeStore = useThemeStore();
 const vantTheme = computed(() => toVantTheme(themeStore.theme));
 
 onMounted(async () => {
   themeStore.hydrate();
-  await Promise.all([authStore.hydrate(), itemStore.hydrate(), exchangeStore.hydrate()]);
+  await Promise.all([
+    authStore.hydrate(),
+    itemStore.hydrate(),
+    exchangeStore.hydrate(),
+    blacklistStore.hydrate(),
+  ]);
 });
 </script>

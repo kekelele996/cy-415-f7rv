@@ -29,10 +29,22 @@ export const useExchangeStore = defineStore('exchanges', {
       }
     },
     async create(draft: ExchangeDraft) {
-      const exchange = await exchangeApi.create({ ...draft, status: ExchangeStatus.PENDING });
-      this.exchanges = await exchangeApi.list();
-      message('交换请求已发出', 'success');
-      return exchange;
+      try {
+        const exchange = await exchangeApi.create({ ...draft, status: ExchangeStatus.PENDING });
+        this.exchanges = await exchangeApi.list();
+        message('交换请求已发出', 'success');
+        return exchange;
+      } catch (error) {
+        message(error instanceof Error ? error.message : '发起交换失败', 'error');
+        return null;
+      }
+    },
+    async closePendingBetween(userA: string, userB: string) {
+      const closed = await exchangeApi.closePendingBetween(userA, userB);
+      if (closed > 0) {
+        this.exchanges = await exchangeApi.list();
+      }
+      return closed;
     },
     async accept(id: string) {
       await exchangeApi.transition(id, ExchangeStatus.ACCEPTED);

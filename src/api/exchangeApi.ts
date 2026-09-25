@@ -1,7 +1,9 @@
 import { EXCHANGE_ACTION_FLOW, ExchangeStatus } from '@/constants/exchange';
 import { ItemStatus } from '@/constants/item';
+import { BLACKLIST_MESSAGES } from '@/constants/messages';
 import type { Exchange, ExchangeDraft } from '@/models/exchange';
 
+import { blacklistApi } from './blacklistApi';
 import { itemApi } from './itemApi';
 import { storage, STORAGE_KEYS } from '@/utils/storage';
 
@@ -29,6 +31,9 @@ export const exchangeApi = {
 
   async create(draft: ExchangeDraft): Promise<Exchange> {
     const exchanges = await this.list();
+    if (await blacklistApi.isBlockedBetween(draft.from_user_id, draft.to_user_id)) {
+      throw new Error(BLACKLIST_MESSAGES.exchangeBlocked);
+    }
     const targetItem = await itemApi.detail(draft.to_item_id);
     if (!targetItem || targetItem.status !== ItemStatus.AVAILABLE) {
       throw new Error('目标物品当前不可交换');
@@ -61,5 +66,29 @@ export const exchangeApi = {
       exchanges.map((item) => (item.id === id ? nextExchange : item)),
     );
     return nextExchange;
+  },
+
+  /**
+   * 拉黑时调用：把两人之间（两个方向）所有待确认请求直接关闭为已拒绝。
+   * 只改交换状态，不触碰双方物品状态；已同意/已完成的记录保持原样。
+   */
+  async closePendingBetween(userA: string, userB: string): Promise<number> {
+    const exchanges = await this.list();
+    const nowIso = new Date().toISOString();
+    let closed = 0;
+    const nextExchanges = exchanges.map((exchange) => {
+      const involvesPair =
+        (exchange.from_user_id === userA && exchange.to_user_id === userB) ||
+        (exchange.from_user_id === userB && exchange.to_user_id === userA);
+      if (exchange.status === ExchangeStatus.PENDING && involvesPair) {
+        closed += 1;
+        return { ...exchange, status: ExchangeStatus.REJECTED, updated_at: nowIso };
+      }
+      return exchange;
+    });
+    if (closed > 0) {
+      await storage.set(STORAGE_KEYS.exchanges, nextExchanges);
+    }
+    return closed;
   },
 };

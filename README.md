@@ -18,6 +18,7 @@ ReSwap 是一个纯前端以物换物 Web 应用。用户可以本地模拟登�
 - 发布物品，支持本地 base64 图片上传、分类和成色选择。
 - 交换管理，区分我发起的和我收到的请求，支持同意、拒绝、完成。
 - 个人中心，编辑资料、上传头像、查看我发布的物品。
+- 黑名单：个人中心可拉黑或解除；被拉黑后对方无法对你的可交换物品发起请求，双方待确认请求立即关闭（物品状态不变），已同意/已完成记录保留；双方互拉只保留一条关系，重复操作幂等；解除后历史记录不恢复。
 - 主题切换、全局错误处理和 Vant 提示。
 
 ## 启动与构建
@@ -49,9 +50,9 @@ pnpm build
 
 ```text
 src/
-├── api/              # userApi.ts, itemApi.ts, exchangeApi.ts：本地数据 API 层
-├── stores/           # authStore.ts, itemStore.ts, exchangeStore.ts, themeStore.ts
-├── models/           # user.ts, item.ts, exchange.ts：独立数据模型
+├── api/              # userApi.ts, itemApi.ts, exchangeApi.ts, blacklistApi.ts：本地数据 API 层
+├── stores/           # authStore.ts, itemStore.ts, exchangeStore.ts, blacklistStore.ts, themeStore.ts
+├── models/           # user.ts, item.ts, exchange.ts, blacklist.ts：独立数据模型
 ├── types/            # 共享类型补充
 ├── components/common/# 共享业务组件和 GlobalErrorBoundary
 ├── hooks/            # useAuth.ts, useLocalStorage.ts, useExchangeStats.ts
@@ -70,6 +71,13 @@ src/
 - 所有 `api/*Api.ts` 通过 `storage.ts` 读写数据，不在组件里直接写业务数据。
 - 存储层包含序列化、版本号、过期清理、存储 key 管理。
 - 首次启动会写入演示用户、物品和交换请求。
+
+## 黑名单规则
+
+- 关系按“无序用户对”存储（`models/blacklist.ts` 的 `buildBlockPairKey`），双方互拉只保留一条记录；记录 id 由用户对确定性生成，重复拉黑或两个标签页同时提交都只生效一次。
+- 拉黑入口在 `/profile` 个人中心，可拉黑其他用户或解除已有关系。
+- 拉黑生效后：对方（其实双方）无法再在 `/item/:id` 对彼此的可交换物品发起交换（`exchangeApi.create` 数据层拦截 + 详情页隐藏表单）；两人之间所有待确认请求立即关闭为“已拒绝”，双方物品状态不变；已同意、已完成的记录照常保留。
+- 解除只删除黑名单关系：历史交换记录保持原样，已关闭的旧请求不会恢复。
 
 ## 横切关注点
 
